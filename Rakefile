@@ -9,6 +9,7 @@ task default: [:compile, :test]
 
 task(:autocompile) { system 'guard' }
 
+desc "Compile coffeescript to javasript"
 task :compile do
   path = 'lib/capybara/poltergeist/client'
   Dir["#{path}/*.coffee"].each do |f|

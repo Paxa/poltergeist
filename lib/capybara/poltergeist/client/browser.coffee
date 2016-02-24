@@ -115,7 +115,7 @@ class Poltergeist.Browser
         command.sendError(new Poltergeist.StatusFailError(url,msg))
       return
 
-  post: (url, params) ->
+  post: (url, params, max_wait=0) ->
     @currentPage.state = 'loading'
 
     # Prevent firing `page.onInitialized` event twice. Calling currentUrl
@@ -128,13 +128,20 @@ class Poltergeist.Browser
     if /#/.test(url) && prevUrl.split('#')[0] == url.split('#')[0]
       # Hash change occurred, so there will be no onLoadFinished
       @currentPage.state = 'default'
-      this.sendResponse(status: 'success')
+      @current_command.sendResponse(status: 'success')
     else
+      command = @current_command
       @currentPage.waitState 'default', =>
         if @currentPage.statusCode == null && @currentPage.status == 'fail'
-          @owner.sendError(new Poltergeist.StatusFailError)
+          command.sendError(new Poltergeist.StatusFailError(url))
         else
-          this.sendResponse(status: @currentPage.status)
+          command.sendResponse(status: @currentPage.status)
+      , max_wait, =>
+        resources = @currentPage.openResourceRequests()
+        msg = if resources.length
+          "Timed out with the following resources still waiting #{@currentPage.openResourceRequests().join(',')}"
+        command.sendError(new Poltergeist.StatusFailError(url,msg))
+      return
 
   current_url: ->
     @current_command.sendResponse @currentPage.currentUrl()
